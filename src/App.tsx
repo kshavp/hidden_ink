@@ -1,91 +1,29 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React from "react";
+import Encode from "./components/Encode";
+import Decode from "./components/Decode";
+import Navbar from "./components/Navbar/Navbar";
 
 const App: React.FC = () => {
-  const [image, setImage] = useState<File | null>(null);
-  const [message, setMessage] = useState<string>('');
-  const [decodedMessage, setDecodedMessage] = useState<string>('');
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setImage(e.target.files[0]);
-    }
-  };
-
-  const handleEncode = async () => {
-    if (!image) return;
-
-    const formData = new FormData();
-    formData.append('image', image);
-    formData.append('message', message);
-
-    try {
-      const response = await axios.post('http://localhost:3000/encode', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      alert(response.data.message);
-      
-      // Download the encoded image
-      const downloadLink = document.createElement('a');
-      downloadLink.href = `http://localhost:3000/${response.data.path}`; // Use full URL for the image
-      downloadLink.download = `encoded-${image.name}`; // Set the name for the downloaded file
-      document.body.appendChild(downloadLink);
-      downloadLink.click(); // Trigger the download
-      document.body.removeChild(downloadLink); // Clean up
-
-    } catch (error) {
-      console.error('Error encoding image:', error);
-    }
-  };
-
-  const handleDecode = async () => {
-    if (!image) return;
-
-    const formData = new FormData();
-    formData.append('image', image);
-
-    try {
-      const response = await axios.post('http://localhost:3000/decode', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      setDecodedMessage(response.data.secretMessage);
-    } catch (error) {
-      console.error('Error decoding image:', error);
-    }
-  };
-
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Image Steganography</h1>
-
-      <input type="file" accept="image/*" onChange={handleImageChange} />
-      <input
-        type="text"
-        placeholder="Enter your message"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        className="mt-2 mb-4 p-2 border"
-      />
-      <div className="flex space-x-2">
-        <button onClick={handleEncode} className="bg-blue-500 text-white p-2 rounded">
-          Encode
-        </button>
-        <button onClick={handleDecode} className="bg-green-500 text-white p-2 rounded">
-          Decode
-        </button>
-      </div>
-
-      {decodedMessage && (
-        <div className="mt-4">
-          <h2 className="text-xl">Decoded Message:</h2>
-          <p>{decodedMessage}</p>
+    <div className="flex flex-col items-center min-h-screen bg-black">
+      <Navbar />
+      <div className="my-auto">
+        <h1 className="text-white text-5xl font-bold mb-4 text-center">
+          Hidden <span className="animate-pulse text-green-700">Ink</span>{" "}
+        </h1>
+        <p className="text-gray-300 text-lg mx-auto mb-10 max-w-xl font-light text-center">
+          Conceal, share and protect classified messages in one click. Decode in
+          two.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl px-5">
+          <div className="bg-neutral-900 border border-gray-700 rounded-lg shadow-lg p-6 transition-transform duration-300">
+            <Encode />
+          </div>
+          <div className="bg-neutral-900 border border-gray-700 rounded-lg shadow-lg p-6 transition-transform duration-300">
+            <Decode />
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
