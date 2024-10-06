@@ -1,5 +1,3 @@
-import React from "react";
-
 const Navbar = () => {
   return (
     <nav className="text-white pt-8 md:text-2xl font-semibold">
