@@ -27,7 +27,7 @@ const Encode: React.FC = () => {
     setLoading(true);
     try {
       const response = await axios.post(
-        "http://localhost:3000/encode",
+        `${import.meta.env.VITE_API_URL}/encode`,
         formData,
         {
           responseType: "blob",
