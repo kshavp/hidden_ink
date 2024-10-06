@@ -46,15 +46,6 @@ app.post('/encode', upload.single('image'), async (req, res) => {
   }
 });
 
-app.get('/download/:filename', (req, res) => {
-  const filePath = path.join(__dirname, 'uploads', req.params.filename);
-  res.download(filePath, (err) => {
-      if (err) {
-          console.error('Download error:', err);
-          res.status(500).send('Could not download the file.');
-      }
-  });
-});
 
 // Decode message from the image
 app.post('/decode', upload.single('image'), async (req, res) => {
