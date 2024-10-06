@@ -17,28 +17,32 @@ app.post('/encode', upload.single('image'), async (req, res) => {
   const imagePath = req.file.path;
   const outputImagePath = path.join('uploads', `encoded-${req.file.filename}.png`);
 
+// const filename = req.file.filename.split('.')[0]; // Original filename without extension
+// const outputImagePaths = [
+//     path.join('uploads', `encoded-${filename}.png`),
+//     path.join('uploads', `encoded-${filename}.jpeg`),
+//     path.join('uploads', `encoded-${filename}.jpg`)];
+
+
   try {
       const image = sharp(imagePath);
       const { width, height, channels } = await image.metadata();
       const data = await image.raw().ensureAlpha().toBuffer();
 
       const messageBuffer = Buffer.from(message + '\0'); // Add null terminator for end of message
-      let messageIndex = 0;
 
       // Encode each character of the message into the image
-      for (let i = 0; i < data.length && messageIndex < messageBuffer.length; i++) {
+      for (let i = 0; i < messageBuffer.length; i++) {
+          if (i * 8 >= data.length) break; // Prevent overflow
           for (let bit = 0; bit < 8; bit++) {
-              if (messageIndex >= messageBuffer.length) break; // Prevent overflow
-              const byte = (messageBuffer[messageIndex] >> (7 - bit)) & 1; // Get the bit
-              data[i] = (data[i] & ~1) | byte; // Set the LSB
-              if (bit === 7) messageIndex++; // Move to next byte after 8 bits
+              const byte = (messageBuffer[i] >> (7 - bit)) & 1; // Get the bit
+              data[i * 8 + bit] = (data[i * 8 + bit] & ~1) | byte; // Set the LSB
           }
       }
 
       await sharp(data, { raw: { width, height, channels } }).toFile(outputImagePath);
       fs.unlinkSync(imagePath); // Clean up original image
 
-      // Return path for downloading the encoded image
       res.json({ message: 'Image encoded successfully', path: outputImagePath });
   } catch (error) {
       console.error('Encoding error:', error);
@@ -46,15 +50,6 @@ app.post('/encode', upload.single('image'), async (req, res) => {
   }
 });
 
-app.get('/download/:filename', (req, res) => {
-  const filePath = path.join(__dirname, 'uploads', req.params.filename);
-  res.download(filePath, (err) => {
-      if (err) {
-          console.error('Download error:', err);
-          res.status(500).send('Could not download the file.');
-      }
-  });
-});
 
 // Decode message from the image
 app.post('/decode', upload.single('image'), async (req, res) => {
@@ -63,24 +58,20 @@ app.post('/decode', upload.single('image'), async (req, res) => {
   try {
       const data = await sharp(imagePath).raw().toBuffer();
       const messageBuffer = [];
-      let byte = 0;
-      let count = 0;
+      let message = '';
 
       // Read bits from the image data
-      for (let i = 0; i < data.length; i++) {
-          byte <<= 1; // Shift left to make space for the next bit
-          byte |= (data[i] & 1); // Read the LSB
-          count++;
-
-          if (count === 8) {
-              if (byte === 0) break; // Null terminator
-              messageBuffer.push(byte);
-              byte = 0; // Reset for next byte
-              count = 0; // Reset bit count
+      for (let i = 0; i < data.length; i += 8) {
+          let byte = 0;
+          for (let bit = 0; bit < 8; bit++) {
+              byte <<= 1;
+              byte |= (data[i + bit] & 1); // Read the LSB
           }
+          if (byte === 0) break; // Null terminator
+          messageBuffer.push(byte);
       }
 
-      const message = String.fromCharCode(...messageBuffer);
+      message = String.fromCharCode(...messageBuffer);
 
       fs.unlinkSync(imagePath); // Clean up uploaded image
 
@@ -90,7 +81,6 @@ app.post('/decode', upload.single('image'), async (req, res) => {
       res.status(500).json({ error: 'Failed to decode image' });
   }
 });
-
 
 
 // Start the server
