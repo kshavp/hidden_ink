@@ -5,7 +5,7 @@ function App() {
   return (
     <>
       <div className="App">
-        <h1>Image Steganography</h1>
+        <h1>श्री HiddenInk</h1>
         <EncodeForm />
       </div>
     </>
