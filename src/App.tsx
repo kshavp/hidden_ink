@@ -5,6 +5,7 @@ const App: React.FC = () => {
   const [image, setImage] = useState<File | null>(null);
   const [message, setMessage] = useState<string>('');
   const [decodedMessage, setDecodedMessage] = useState<string>('');
+  const [encodedImagePath, setEncodedImagePath] = useState<string | null>(null); // State for encoded image path
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -26,6 +27,7 @@ const App: React.FC = () => {
         },
       });
       alert(response.data.message);
+      setEncodedImagePath(response.data.path); // Set the path of the encoded image
     } catch (error) {
       console.error('Error encoding image:', error);
     }
@@ -49,6 +51,18 @@ const App: React.FC = () => {
     }
   };
 
+  const downloadImage = () => {
+    if (encodedImagePath) {
+      // Trigger download
+      const link = document.createElement('a');
+      link.href = `http://localhost:3000/${encodedImagePath}`;
+      link.setAttribute('download', `encoded-${image?.name}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Image Steganography</h1>
@@ -69,6 +83,14 @@ const App: React.FC = () => {
           Decode
         </button>
       </div>
+
+      {encodedImagePath && (
+        <div className="mt-4">
+          <button onClick={downloadImage} className="bg-yellow-500 text-white p-2 rounded">
+            Download Encoded Image
+          </button>
+        </div>
+      )}
 
       {decodedMessage && (
         <div className="mt-4">
